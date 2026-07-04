@@ -51,6 +51,16 @@ export function ContentBlockSection({
     return <CustomizationLayout block={block} eyebrow={eyebrow} id={id} tinted={tinted} />;
   }
 
+  if (
+    key === "why_choose_us" ||
+    key === "why" ||
+    key === "benefits" ||
+    key === "trust" ||
+    id === "why-choose-us"
+  ) {
+    return <WhyChooseUsLayout block={block} eyebrow={eyebrow} id={id} tinted={tinted} />;
+  }
+
   return (
     <section
       id={id}
@@ -302,6 +312,102 @@ function CustomizationLayout({
 }
 
 /* -------------------------------------------------------------------------- */
+/* Why 1 & 9 Apparel                                                           */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Proof points for the "why choose us" section.
+ *
+ * Deliberately factual and restrained — NO invented certifications, client
+ * names, container counts, or factory-size claims. The only figure is the real
+ * brand MOQ (300 pcs, present in the RPC products/FAQ data), and the export
+ * markets are the business's stated B2B markets. The page's own SEO heading +
+ * body remain the primary proof and are rendered verbatim from the RPC above.
+ */
+const WHY_PROOFS: { label: string; caption: string; icon: IconName }[] = [
+  {
+    label: "Factory-Direct",
+    caption: "Work directly with the production floor — not a trading middleman.",
+    icon: "factory",
+  },
+  {
+    label: "Export-Ready",
+    caption: "Set up for B2B export to the USA, UK, EU, Canada and Australia.",
+    icon: "export",
+  },
+  {
+    label: "Low MOQ",
+    caption: "Start from 300 pieces per style — accessible for growing brands.",
+    icon: "moq",
+  },
+  {
+    label: "Quality Control",
+    caption: "Export-grade QC with inline and final inspection on every order.",
+    icon: "qc",
+  },
+  {
+    label: "Speed",
+    caption: "Quotes within one business day and a clear sampling-to-bulk schedule.",
+    icon: "speed",
+  },
+  {
+    label: "Buyer Support",
+    caption: "A dedicated English-speaking merchandiser on every account.",
+    icon: "support",
+  },
+];
+
+function WhyChooseUsLayout({
+  block,
+  eyebrow,
+  id,
+  tinted,
+}: {
+  block: ContentBlock;
+  eyebrow: string;
+  id: string;
+  tinted: boolean;
+}) {
+  return (
+    <section
+      id={id}
+      className={`border-t border-neutral-200 ${tinted ? "bg-neutral-50" : "bg-white"}`}
+    >
+      <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
+        <SectionHeading eyebrow={eyebrow}>{block.heading}</SectionHeading>
+        {block.body ? (
+          <div className="max-w-3xl space-y-4 text-base leading-relaxed text-neutral-600 sm:text-lg">
+            <Paragraphs text={block.body} />
+          </div>
+        ) : null}
+
+        <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
+          {WHY_PROOFS.map((proof) => (
+            <div
+              key={proof.label}
+              className="rounded-xl border border-neutral-200 bg-white p-5 transition-shadow hover:shadow-md"
+            >
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-neutral-900 text-white">
+                  <SpecIcon icon={proof.icon} />
+                </span>
+                <span className="text-sm font-semibold text-neutral-900">{proof.label}</span>
+              </div>
+              <p className="mt-3 flex items-start gap-2 text-sm leading-relaxed text-neutral-600">
+                <span className="mt-0.5 shrink-0 text-neutral-900">
+                  <SpecIcon icon="check" />
+                </span>
+                {proof.caption}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
 /* Icons                                                                       */
 /* -------------------------------------------------------------------------- */
 
@@ -319,7 +425,11 @@ type IconName =
   | "printing"
   | "embroidery"
   | "labels"
-  | "packaging";
+  | "packaging"
+  | "export"
+  | "speed"
+  | "support"
+  | "check";
 
 function SpecIcon({ icon }: { icon: IconName }) {
   const common = {
@@ -439,6 +549,35 @@ function SpecIcon({ icon }: { icon: IconName }) {
           <path d="M3.3 7 12 12l8.7-5" />
           <path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
           <path d="M12 22V12M7.5 4.5l9 5" />
+        </svg>
+      );
+    case "export":
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M3 12h18M12 3c2.5 2.6 2.5 15.4 0 18M12 3c-2.5 2.6-2.5 15.4 0 18" />
+        </svg>
+      );
+    case "speed":
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="13" r="8" />
+          <path d="M12 13V9M12 5V3M9 3h6" />
+        </svg>
+      );
+    case "support":
+      return (
+        <svg {...common}>
+          <path d="M4 13a8 8 0 0 1 16 0" />
+          <rect x="3" y="13" width="4" height="6" rx="1.5" />
+          <rect x="17" y="13" width="4" height="6" rx="1.5" />
+          <path d="M20 19a3 3 0 0 1-3 3h-3" />
+        </svg>
+      );
+    case "check":
+      return (
+        <svg {...common} className="h-4 w-4">
+          <path d="M20 6 9 17l-5-5" />
         </svg>
       );
     default:

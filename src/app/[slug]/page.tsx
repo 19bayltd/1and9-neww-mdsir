@@ -124,6 +124,7 @@ export default async function LandingPage({
         eyebrow="Buyer Solutions"
         id="buyer-solutions"
         tinted
+        internalLinks={data.internal_links}
       />
 
       {/* 8. Related Products */}

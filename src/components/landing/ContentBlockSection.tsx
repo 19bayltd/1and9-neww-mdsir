@@ -1,4 +1,5 @@
-import type { ContentBlock } from "@/lib/landing";
+import Link from "next/link";
+import type { ContentBlock, InternalLink, InternalLinks } from "@/lib/landing";
 import { Paragraphs, SectionHeading } from "./_shared";
 
 /**
@@ -20,11 +21,14 @@ export function ContentBlockSection({
   eyebrow,
   id,
   tinted = false,
+  internalLinks,
 }: {
   block?: ContentBlock;
   eyebrow: string;
   id: string;
   tinted?: boolean;
+  /** RPC internal_links — currently used by the buyer_solutions layout only. */
+  internalLinks?: InternalLinks | null;
 }) {
   if (!block || (!block.heading && !block.body)) return null;
 
@@ -68,6 +72,23 @@ export function ContentBlockSection({
     id === "production-process"
   ) {
     return <ProductionProcessLayout block={block} eyebrow={eyebrow} id={id} tinted={tinted} />;
+  }
+
+  if (
+    key === "buyer_solutions" ||
+    key === "buyer" ||
+    key === "solutions" ||
+    id === "buyer-solutions"
+  ) {
+    return (
+      <BuyerSolutionsLayout
+        block={block}
+        eyebrow={eyebrow}
+        id={id}
+        tinted={tinted}
+        internalLinks={internalLinks}
+      />
+    );
   }
 
   return (
@@ -509,6 +530,147 @@ function ProductionProcessLayout({
 }
 
 /* -------------------------------------------------------------------------- */
+/* Buyer Solutions                                                             */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Buyer segments served. Labels and captions are generic B2B buyer language,
+ * identical on every page. Each card tries to resolve a REAL internal link
+ * from the RPC internal_links (matched by keyword against anchor + slug);
+ * when no match exists the card falls back to the on-page #rfq anchor — no
+ * fabricated URLs.
+ */
+const BUYER_SEGMENTS: {
+  label: string;
+  caption: string;
+  keywords: string[];
+  icon: IconName;
+}[] = [
+  {
+    label: "Startup Brands",
+    caption: "Launch-ready runs from 300 pcs with sampling support.",
+    keywords: ["startup", "start-up", "private label", "private-label"],
+    icon: "startup",
+  },
+  {
+    label: "Streetwear",
+    caption: "Heavyweight tees, hoodies and drops with custom trims.",
+    keywords: ["streetwear", "street-wear"],
+    icon: "streetwear",
+  },
+  {
+    label: "Gym & Fitness",
+    caption: "Performance knits and activewear built for repeat orders.",
+    keywords: ["gym", "fitness", "activewear", "athletic"],
+    icon: "gym",
+  },
+  {
+    label: "Corporate",
+    caption: "Uniform and merch programs with consistent re-runs.",
+    keywords: ["corporate", "workwear", "uniform"],
+    icon: "corporate",
+  },
+  {
+    label: "Restaurants",
+    caption: "Staff tees, polos and aprons with embroidered branding.",
+    keywords: ["restaurant", "hospitality", "cafe"],
+    icon: "restaurant",
+  },
+  {
+    label: "Schools",
+    caption: "Spiritwear and team apparel in size-graded bulk packs.",
+    keywords: ["school", "college", "university", "spiritwear"],
+    icon: "school",
+  },
+  {
+    label: "Medical",
+    caption: "Clinic and care-team apparel with durable wash performance.",
+    keywords: ["medical", "healthcare", "scrubs", "clinic"],
+    icon: "medical",
+  },
+];
+
+/** Find the first RPC internal link whose anchor or slug matches a keyword. */
+function findSegmentLink(
+  internalLinks: InternalLinks | null | undefined,
+  keywords: string[]
+): InternalLink | null {
+  if (!internalLinks) return null;
+  const all = Object.values(internalLinks)
+    .filter(Array.isArray)
+    .flat()
+    .filter((l): l is InternalLink => Boolean(l && l.slug));
+  for (const link of all) {
+    const haystack = `${link.anchor ?? ""} ${link.slug ?? ""}`.toLowerCase();
+    if (keywords.some((k) => haystack.includes(k))) return link;
+  }
+  return null;
+}
+
+function BuyerSolutionsLayout({
+  block,
+  eyebrow,
+  id,
+  tinted,
+  internalLinks,
+}: {
+  block: ContentBlock;
+  eyebrow: string;
+  id: string;
+  tinted: boolean;
+  internalLinks?: InternalLinks | null;
+}) {
+  return (
+    <section
+      id={id}
+      className={`border-t border-neutral-200 ${tinted ? "bg-neutral-50" : "bg-white"}`}
+    >
+      <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
+        <SectionHeading eyebrow={eyebrow}>{block.heading}</SectionHeading>
+        {block.body ? (
+          <div className="max-w-3xl space-y-4 text-base leading-relaxed text-neutral-600 sm:text-lg">
+            <Paragraphs text={block.body} />
+          </div>
+        ) : null}
+
+        <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
+          {BUYER_SEGMENTS.map((segment) => {
+            const link = findSegmentLink(internalLinks, segment.keywords);
+            const inner = (
+              <>
+                <div className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-neutral-900 text-white">
+                    <SpecIcon icon={segment.icon} />
+                  </span>
+                  <span className="text-sm font-semibold text-neutral-900">{segment.label}</span>
+                </div>
+                <p className="mt-3 text-sm leading-relaxed text-neutral-600">{segment.caption}</p>
+                <p className="mt-4 text-sm font-semibold text-neutral-900 group-hover:text-neutral-600">
+                  {link ? `${link.anchor || "View manufacturing page"} →` : "Request a bulk quote →"}
+                </p>
+              </>
+            );
+            const cardClass =
+              "group flex h-full flex-col rounded-xl border border-neutral-200 bg-white p-5 transition-shadow hover:shadow-md";
+
+            // Real RPC internal link when matched; safe on-page #rfq fallback otherwise.
+            return link?.slug ? (
+              <Link key={segment.label} href={`/${link.slug}`} className={cardClass}>
+                {inner}
+              </Link>
+            ) : (
+              <a key={segment.label} href="#rfq" className={cardClass}>
+                {inner}
+              </a>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
 /* Icons                                                                       */
 /* -------------------------------------------------------------------------- */
 
@@ -531,7 +693,14 @@ type IconName =
   | "speed"
   | "support"
   | "check"
-  | "design";
+  | "design"
+  | "startup"
+  | "streetwear"
+  | "gym"
+  | "corporate"
+  | "restaurant"
+  | "school"
+  | "medical";
 
 function SpecIcon({ icon }: { icon: IconName }) {
   const common = {
@@ -687,6 +856,56 @@ function SpecIcon({ icon }: { icon: IconName }) {
         <svg {...common}>
           <path d="M12 20h9" />
           <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
+        </svg>
+      );
+    case "startup":
+      return (
+        <svg {...common}>
+          <path d="M4.5 16.5 3 21l4.5-1.5" />
+          <path d="M12 15c5-4 7-8.5 7-12-3.5 0-8 2-12 7l-3 1 4 4 4 4 1-3z" />
+          <circle cx="14" cy="10" r="1.4" />
+        </svg>
+      );
+    case "streetwear":
+      return (
+        <svg {...common}>
+          <path d="M8 4 5 6l-2 4 3 1.5V20h12v-8.5L21 10l-2-4-3-2" />
+          <path d="M8 4a4 4 0 0 0 8 0" />
+        </svg>
+      );
+    case "gym":
+      return (
+        <svg {...common}>
+          <path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11" />
+        </svg>
+      );
+    case "corporate":
+      return (
+        <svg {...common}>
+          <rect x="3" y="7" width="18" height="13" rx="2" />
+          <path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18" />
+        </svg>
+      );
+    case "restaurant":
+      return (
+        <svg {...common}>
+          <path d="M5 3v8M8 3v8M6.5 11v10M5 7h3" />
+          <path d="M15 3c-1.5 2-2 4-2 6 0 2 1 3 2.5 3S18 11 18 9c0-2-.5-4-2-6z" />
+          <path d="M16 12v9" />
+        </svg>
+      );
+    case "school":
+      return (
+        <svg {...common}>
+          <path d="M12 4 2 9l10 5 10-5z" />
+          <path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5M22 9v5" />
+        </svg>
+      );
+    case "medical":
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 8v8M8 12h8" />
         </svg>
       );
     default:

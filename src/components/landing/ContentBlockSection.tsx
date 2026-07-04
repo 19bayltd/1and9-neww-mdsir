@@ -10,9 +10,10 @@ import { Paragraphs, SectionHeading } from "./_shared";
  * tint. Renders nothing if the block is absent, so section order is preserved
  * without hardcoding any copy.
  *
- * The Intro block (block_key "intro") gets a richer editorial layout with a
- * supporting visual and two generic "angle" framings; all other blocks keep
- * the clean single-column text layout.
+ * Two blocks get richer layouts:
+ *  - "intro": editorial two-column with a supporting visual + angle framings.
+ *  - "manufacturing_overview": RPC copy + a premium grid of spec cards.
+ * All other blocks keep the clean single-column text layout.
  */
 export function ContentBlockSection({
   block,
@@ -27,9 +28,18 @@ export function ContentBlockSection({
 }) {
   if (!block || (!block.heading && !block.body)) return null;
 
-  const isIntro = (block.block_key ?? "").toLowerCase() === "intro" || id === "intro";
-  if (isIntro) {
+  const key = (block.block_key ?? "").toLowerCase();
+
+  if (key === "intro" || id === "intro") {
     return <IntroLayout block={block} eyebrow={eyebrow} id={id} tinted={tinted} />;
+  }
+
+  if (
+    key === "manufacturing_overview" ||
+    key === "manufacturing" ||
+    id === "manufacturing-overview"
+  ) {
+    return <ManufacturingLayout block={block} eyebrow={eyebrow} id={id} tinted={tinted} />;
   }
 
   return (
@@ -55,12 +65,15 @@ export function ContentBlockSection({
   );
 }
 
+/* -------------------------------------------------------------------------- */
+/* Intro                                                                       */
+/* -------------------------------------------------------------------------- */
+
 /**
- * Generic, brand-level framing for the intro's two angles. These are the same
- * on every landing page (not page-specific SEO), so they live here as generic
- * UI copy rather than in the RPC.
+ * Generic, brand-level framing for the intro's two angles. Same on every
+ * landing page (not page-specific SEO), so defined here as generic UI copy.
  */
-const INTRO_ANGLES: { label: string; text: string; icon: "factory" | "capability" }[] = [
+const INTRO_ANGLES: { label: string; text: string; icon: IconName }[] = [
   {
     label: "Factory Story",
     text: "Factory-direct production in Bangladesh — no middlemen between your brand and the sewing floor.",
@@ -122,7 +135,7 @@ function IntroLayout({
               {INTRO_ANGLES.map((angle) => (
                 <div key={angle.label} className="flex gap-4 p-5">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-neutral-900 text-white">
-                    <AngleIcon icon={angle.icon} />
+                    <SpecIcon icon={angle.icon} />
                   </span>
                   <div>
                     <p className="text-sm font-semibold text-neutral-900">{angle.label}</p>
@@ -138,7 +151,96 @@ function IntroLayout({
   );
 }
 
-function AngleIcon({ icon }: { icon: "factory" | "capability" }) {
+/* -------------------------------------------------------------------------- */
+/* Manufacturing Overview                                                      */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Generic manufacturing spec cards. The RPC block only carries prose (heading
+ * + body), not structured MOQ/sampling/QC fields, so these are generic
+ * brand-level labels — identical on every page, not fabricated page-specific
+ * claims. The page's own SEO copy (heading + body) is still rendered verbatim
+ * from the RPC above the grid.
+ */
+const MANUFACTURING_SPECS: {
+  label: string;
+  value: string;
+  caption: string;
+  icon: IconName;
+}[] = [
+  { label: "MOQ", value: "300 pcs", caption: "Minimum order per style", icon: "moq" },
+  { label: "Sampling", value: "7–10 days", caption: "Pre-production samples", icon: "sampling" },
+  { label: "Production", value: "30–45 days", caption: "Bulk lead time after approval", icon: "production" },
+  { label: "Quality Control", value: "AQL 2.5", caption: "Inline & final inspection", icon: "qc" },
+  { label: "Shipping", value: "DDP ready", caption: "Duties & clearance handled", icon: "shipping" },
+  { label: "Capacity", value: "Export scale", caption: "High-volume factory output", icon: "capacity" },
+];
+
+function ManufacturingLayout({
+  block,
+  eyebrow,
+  id,
+  tinted,
+}: {
+  block: ContentBlock;
+  eyebrow: string;
+  id: string;
+  tinted: boolean;
+}) {
+  return (
+    <section
+      id={id}
+      className={`border-t border-neutral-200 ${tinted ? "bg-neutral-50" : "bg-white"}`}
+    >
+      <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
+        <SectionHeading eyebrow={eyebrow}>{block.heading}</SectionHeading>
+        {block.body ? (
+          <div className="max-w-3xl space-y-4 text-base leading-relaxed text-neutral-600 sm:text-lg">
+            <Paragraphs text={block.body} />
+          </div>
+        ) : null}
+
+        <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
+          {MANUFACTURING_SPECS.map((spec) => (
+            <div
+              key={spec.label}
+              className="rounded-xl border border-neutral-200 bg-white p-5 transition-shadow hover:shadow-md"
+            >
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-neutral-900 text-white">
+                  <SpecIcon icon={spec.icon} />
+                </span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                  {spec.label}
+                </span>
+              </div>
+              <p className="mt-4 text-2xl font-bold tracking-tight text-neutral-900">
+                {spec.value}
+              </p>
+              <p className="mt-1 text-sm leading-relaxed text-neutral-600">{spec.caption}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Icons                                                                       */
+/* -------------------------------------------------------------------------- */
+
+type IconName =
+  | "factory"
+  | "capability"
+  | "moq"
+  | "sampling"
+  | "production"
+  | "qc"
+  | "shipping"
+  | "capacity";
+
+function SpecIcon({ icon }: { icon: IconName }) {
   const common = {
     className: "h-5 w-5",
     fill: "none",
@@ -149,19 +251,69 @@ function AngleIcon({ icon }: { icon: "factory" | "capability" }) {
     viewBox: "0 0 24 24",
     "aria-hidden": true,
   };
-  if (icon === "factory") {
-    return (
-      <svg {...common}>
-        <path d="M3 21h18" />
-        <path d="M4 21V10l6 4V10l6 4V6l4 2v13" />
-        <path d="M8 21v-4M13 21v-4" />
-      </svg>
-    );
+
+  switch (icon) {
+    case "factory":
+      return (
+        <svg {...common}>
+          <path d="M3 21h18" />
+          <path d="M4 21V10l6 4V10l6 4V6l4 2v13" />
+          <path d="M8 21v-4M13 21v-4" />
+        </svg>
+      );
+    case "capability":
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="3" />
+          <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1" />
+        </svg>
+      );
+    case "moq":
+      return (
+        <svg {...common}>
+          <path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+          <path d="M3.3 7 12 12l8.7-5M12 22V12" />
+        </svg>
+      );
+    case "sampling":
+      return (
+        <svg {...common}>
+          <circle cx="6" cy="6" r="3" />
+          <circle cx="6" cy="18" r="3" />
+          <path d="M20 4 8.1 15.9M14.5 12.5 20 20M8.1 8.1 12 12" />
+        </svg>
+      );
+    case "production":
+      return (
+        <svg {...common}>
+          <rect x="2" y="14" width="20" height="6" rx="1" />
+          <path d="M6 17h.01M10 17h.01M14 17h.01M18 17h.01" />
+          <path d="M7 14V9a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v5M12 7V4" />
+        </svg>
+      );
+    case "qc":
+      return (
+        <svg {...common}>
+          <path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z" />
+          <path d="M9 12l2 2 4-4" />
+        </svg>
+      );
+    case "shipping":
+      return (
+        <svg {...common}>
+          <path d="M3 5h11v9H3zM14 8h4l3 3v3h-7z" />
+          <circle cx="7" cy="18" r="1.6" />
+          <circle cx="17" cy="18" r="1.6" />
+        </svg>
+      );
+    case "capacity":
+      return (
+        <svg {...common}>
+          <path d="M12 3 2 9l10 6 10-6z" />
+          <path d="M2 15l10 6 10-6M2 12l10 6 10-6" />
+        </svg>
+      );
+    default:
+      return null;
   }
-  return (
-    <svg {...common}>
-      <circle cx="12" cy="12" r="3" />
-      <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1" />
-    </svg>
-  );
 }

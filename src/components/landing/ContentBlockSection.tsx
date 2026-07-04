@@ -42,6 +42,15 @@ export function ContentBlockSection({
     return <ManufacturingLayout block={block} eyebrow={eyebrow} id={id} tinted={tinted} />;
   }
 
+  if (
+    key === "customization_options" ||
+    key === "customization" ||
+    key === "options" ||
+    id === "customization-options"
+  ) {
+    return <CustomizationLayout block={block} eyebrow={eyebrow} id={id} tinted={tinted} />;
+  }
+
   return (
     <section
       id={id}
@@ -227,6 +236,72 @@ function ManufacturingLayout({
 }
 
 /* -------------------------------------------------------------------------- */
+/* Customization Options                                                       */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Generic customization capability cards. The RPC block carries only prose, so
+ * these are generic apparel-manufacturer capabilities — identical on every
+ * page, not fabricated product-specific data. The page's own SEO heading +
+ * body are still rendered verbatim from the RPC above the grid.
+ */
+const CUSTOMIZATION_OPTIONS: {
+  label: string;
+  caption: string;
+  icon: IconName;
+}[] = [
+  { label: "Fabric", caption: "Cotton, blends & organic — combed, carded and ring-spun.", icon: "fabric" },
+  { label: "GSM", caption: "140–450 GSM, from lightweight tees to heavy fleece.", icon: "gsm" },
+  { label: "Printing", caption: "Screen, DTG and DTF — up to 12-colour artwork.", icon: "printing" },
+  { label: "Embroidery", caption: "Flat and 3D puff for logos, badges and monograms.", icon: "embroidery" },
+  { label: "Labels", caption: "Custom neck, woven, care and hang tags.", icon: "labels" },
+  { label: "Packaging", caption: "Poly-bag or retail box — barcode and carton ready.", icon: "packaging" },
+];
+
+function CustomizationLayout({
+  block,
+  eyebrow,
+  id,
+  tinted,
+}: {
+  block: ContentBlock;
+  eyebrow: string;
+  id: string;
+  tinted: boolean;
+}) {
+  return (
+    <section
+      id={id}
+      className={`border-t border-neutral-200 ${tinted ? "bg-neutral-50" : "bg-white"}`}
+    >
+      <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
+        <SectionHeading eyebrow={eyebrow}>{block.heading}</SectionHeading>
+        {block.body ? (
+          <div className="max-w-3xl space-y-4 text-base leading-relaxed text-neutral-600 sm:text-lg">
+            <Paragraphs text={block.body} />
+          </div>
+        ) : null}
+
+        <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
+          {CUSTOMIZATION_OPTIONS.map((opt) => (
+            <div
+              key={opt.label}
+              className="rounded-xl border border-neutral-200 bg-neutral-50 p-5 transition-shadow hover:shadow-md"
+            >
+              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-neutral-900 text-white">
+                <SpecIcon icon={opt.icon} />
+              </span>
+              <p className="mt-4 text-base font-semibold text-neutral-900">{opt.label}</p>
+              <p className="mt-1 text-sm leading-relaxed text-neutral-600">{opt.caption}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
 /* Icons                                                                       */
 /* -------------------------------------------------------------------------- */
 
@@ -238,7 +313,13 @@ type IconName =
   | "production"
   | "qc"
   | "shipping"
-  | "capacity";
+  | "capacity"
+  | "fabric"
+  | "gsm"
+  | "printing"
+  | "embroidery"
+  | "labels"
+  | "packaging";
 
 function SpecIcon({ icon }: { icon: IconName }) {
   const common = {
@@ -311,6 +392,53 @@ function SpecIcon({ icon }: { icon: IconName }) {
         <svg {...common}>
           <path d="M12 3 2 9l10 6 10-6z" />
           <path d="M2 15l10 6 10-6M2 12l10 6 10-6" />
+        </svg>
+      );
+    case "fabric":
+      return (
+        <svg {...common}>
+          <path d="M3 6c2 0 2 1.5 4 1.5S9 6 11 6s2 1.5 4 1.5S17 6 19 6" />
+          <path d="M3 6v12c2 0 2 1.5 4 1.5S9 18 11 18s2 1.5 4 1.5S17 18 19 18V6" />
+          <path d="M3 12c2 0 2 1.5 4 1.5S9 12 11 12s2 1.5 4 1.5S17 12 19 12" />
+        </svg>
+      );
+    case "gsm":
+      return (
+        <svg {...common}>
+          <path d="M12 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" />
+          <path d="M8.5 6h7l3 13a2 2 0 0 1-2 2.5H7.5a2 2 0 0 1-2-2.5z" />
+          <path d="M9 13h6" />
+        </svg>
+      );
+    case "printing":
+      return (
+        <svg {...common}>
+          <path d="M6 9V3h12v6" />
+          <path d="M6 18H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2" />
+          <rect x="6" y="14" width="12" height="7" rx="1" />
+        </svg>
+      );
+    case "embroidery":
+      return (
+        <svg {...common}>
+          <path d="M4 20 20 4" />
+          <path d="M17 3.5 20.5 7 18 9.5 14.5 6z" />
+          <circle cx="6" cy="18" r="2.4" />
+        </svg>
+      );
+    case "labels":
+      return (
+        <svg {...common}>
+          <path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0l-6.2-6.2A2 2 0 0 1 4 13V5a1 1 0 0 1 1-1h8a2 2 0 0 1 1.4.6l6.2 6.2a2 2 0 0 1 0 2.6z" />
+          <circle cx="8.5" cy="8.5" r="1.2" />
+        </svg>
+      );
+    case "packaging":
+      return (
+        <svg {...common}>
+          <path d="M3.3 7 12 12l8.7-5" />
+          <path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+          <path d="M12 22V12M7.5 4.5l9 5" />
         </svg>
       );
     default:

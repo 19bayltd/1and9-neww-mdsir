@@ -61,6 +61,15 @@ export function ContentBlockSection({
     return <WhyChooseUsLayout block={block} eyebrow={eyebrow} id={id} tinted={tinted} />;
   }
 
+  if (
+    key === "production_process" ||
+    key === "process" ||
+    key === "production" ||
+    id === "production-process"
+  ) {
+    return <ProductionProcessLayout block={block} eyebrow={eyebrow} id={id} tinted={tinted} />;
+  }
+
   return (
     <section
       id={id}
@@ -408,6 +417,98 @@ function WhyChooseUsLayout({
 }
 
 /* -------------------------------------------------------------------------- */
+/* Production Process                                                          */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Production timeline steps. Labels are generic manufacturing stages — no
+ * per-step day figures are shown, since the RPC block has no structured
+ * per-step timing (any durations live only inside the prose body, which is
+ * rendered verbatim above the timeline).
+ */
+const PRODUCTION_STEPS: { label: string; icon: IconName }[] = [
+  { label: "Design", icon: "design" },
+  { label: "Sampling", icon: "sampling" },
+  { label: "Approval", icon: "check" },
+  { label: "Production", icon: "production" },
+  { label: "QC", icon: "qc" },
+  { label: "Shipping", icon: "shipping" },
+];
+
+function ProductionProcessLayout({
+  block,
+  eyebrow,
+  id,
+  tinted,
+}: {
+  block: ContentBlock;
+  eyebrow: string;
+  id: string;
+  tinted: boolean;
+}) {
+  const last = PRODUCTION_STEPS.length - 1;
+
+  return (
+    <section
+      id={id}
+      className={`border-t border-neutral-200 ${tinted ? "bg-neutral-50" : "bg-white"}`}
+    >
+      <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
+        <SectionHeading eyebrow={eyebrow}>{block.heading}</SectionHeading>
+        {block.body ? (
+          <div className="max-w-3xl space-y-4 text-base leading-relaxed text-neutral-600 sm:text-lg">
+            <Paragraphs text={block.body} />
+          </div>
+        ) : null}
+
+        {/* Horizontal timeline (lg and up) */}
+        <ol className="mt-12 hidden lg:grid lg:grid-cols-6">
+          {PRODUCTION_STEPS.map((step, i) => (
+            <li key={step.label} className="relative flex flex-col items-center px-2 text-center">
+              {i < last ? (
+                <span
+                  className="absolute left-1/2 top-6 h-px w-full bg-neutral-200"
+                  aria-hidden
+                />
+              ) : null}
+              <span className="relative z-10 flex h-12 w-12 items-center justify-center rounded-full bg-neutral-900 text-white ring-4 ring-white">
+                <SpecIcon icon={step.icon} />
+              </span>
+              <span className="mt-4 text-[11px] font-semibold uppercase tracking-wide text-neutral-400">
+                Step {i + 1}
+              </span>
+              <span className="mt-0.5 text-sm font-semibold text-neutral-900">{step.label}</span>
+            </li>
+          ))}
+        </ol>
+
+        {/* Vertical timeline (below lg) */}
+        <ol className="mt-10 lg:hidden">
+          {PRODUCTION_STEPS.map((step, i) => (
+            <li key={step.label} className="relative flex gap-4">
+              <div className="flex flex-col items-center">
+                <span className="relative z-10 flex h-11 w-11 items-center justify-center rounded-full bg-neutral-900 text-white">
+                  <SpecIcon icon={step.icon} />
+                </span>
+                {i < last ? (
+                  <span className="my-1 w-px grow bg-neutral-200" aria-hidden />
+                ) : null}
+              </div>
+              <div className={i < last ? "pb-8 pt-1.5" : "pt-1.5"}>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-neutral-400">
+                  Step {i + 1}
+                </p>
+                <p className="mt-0.5 text-sm font-semibold text-neutral-900">{step.label}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
 /* Icons                                                                       */
 /* -------------------------------------------------------------------------- */
 
@@ -429,7 +530,8 @@ type IconName =
   | "export"
   | "speed"
   | "support"
-  | "check";
+  | "check"
+  | "design";
 
 function SpecIcon({ icon }: { icon: IconName }) {
   const common = {
@@ -578,6 +680,13 @@ function SpecIcon({ icon }: { icon: IconName }) {
       return (
         <svg {...common} className="h-4 w-4">
           <path d="M20 6 9 17l-5-5" />
+        </svg>
+      );
+    case "design":
+      return (
+        <svg {...common}>
+          <path d="M12 20h9" />
+          <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
         </svg>
       );
     default:

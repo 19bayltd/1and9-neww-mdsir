@@ -74,6 +74,7 @@ export default async function LandingPage({
 
   const data = result.data;
   const blocks = data.content_blocks;
+  const rfqBlock = blockByKey(blocks, "rfq");
 
   return (
     <main className="bg-white text-neutral-900">
@@ -129,7 +130,13 @@ export default async function LandingPage({
       <ProductCards data={data} />
 
       {/* 9. RFQ / Instant Quote */}
-      <RFQSection data={data} />
+      <RFQSection
+        sourcePageId={data.page?.id ?? null}
+        sourceSlug={data.page?.slug ?? null}
+        heading={rfqBlock?.heading}
+        body={rfqBlock?.body}
+        ctaLabel={rfqBlock?.cta_label}
+      />
 
       {/* 10. FAQ */}
       <FAQSection data={data} />

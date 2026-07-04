@@ -3,11 +3,15 @@ import { blockByKey, type LandingPageData, type Product } from "@/lib/landing";
 import { SectionHeading } from "./_shared";
 
 /**
- * Related Products section. Renders the products array from the RPC as simple
- * cards (name, image, category, MOQ, link). Renders nothing if empty.
+ * Related Products section — premium B2B product grid.
+ *
+ * Every card is driven entirely by the RPC products array (image, name, MOQ,
+ * category, CTA text, link). No products are hardcoded and none are invented;
+ * if the array is empty the section renders nothing. Images lazy-load so the
+ * grid stays fast on long landing pages.
  */
 export function ProductCards({ data }: { data: LandingPageData }) {
-  const products: Product[] = data.products ?? [];
+  const products: Product[] = (data.products ?? []).filter((p) => p.title || p.slug);
   if (products.length === 0) return null;
 
   const block = blockByKey(data.content_blocks, "related_products");
@@ -16,13 +20,24 @@ export function ProductCards({ data }: { data: LandingPageData }) {
   return (
     <section id="related-products" className="border-t border-neutral-200 bg-white">
       <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
-        <SectionHeading eyebrow="Product Range">{heading}</SectionHeading>
-        {block?.body ? (
-          <p className="mb-8 max-w-3xl text-base leading-relaxed text-neutral-600 sm:text-lg">
-            {block.body}
-          </p>
-        ) : null}
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="max-w-3xl">
+            <SectionHeading eyebrow="Product Range">{heading}</SectionHeading>
+            {block?.body ? (
+              <p className="-mt-2 text-base leading-relaxed text-neutral-600 sm:text-lg">
+                {block.body}
+              </p>
+            ) : null}
+          </div>
+          <a
+            href="#rfq"
+            className="hidden shrink-0 items-center justify-center rounded-md border border-neutral-300 px-5 py-2.5 text-sm font-semibold text-neutral-900 transition-colors hover:border-neutral-900 sm:inline-flex"
+          >
+            Quote Multiple Styles
+          </a>
+        </div>
+
+        <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {products.map((p, i) => (
             <ProductCard key={p.slug ?? i} product={p} />
           ))}
@@ -34,58 +49,84 @@ export function ProductCards({ data }: { data: LandingPageData }) {
 
 function ProductCard({ product }: { product: Product }) {
   const href = product.slug ? `/${product.slug}` : undefined;
-  const category = product.category ?? (product.is_featured ? "Featured" : null);
+  const category = product.category ?? null;
 
   const inner = (
-    <div className="group flex h-full flex-col overflow-hidden rounded-lg border border-neutral-200 bg-white transition-shadow hover:shadow-md">
-      <div className="aspect-[4/3] w-full overflow-hidden bg-neutral-100">
+    <article className="group flex h-full flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white transition-all hover:-translate-y-0.5 hover:shadow-lg">
+      {/* Image */}
+      <div className="relative aspect-[4/3] w-full overflow-hidden bg-neutral-100">
         {product.image_url ? (
           <img
             src={product.image_url}
             alt={product.title ?? "Product"}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            loading="lazy"
+            decoding="async"
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-sm text-neutral-400">
             {product.title}
           </div>
         )}
-      </div>
-      <div className="flex flex-1 flex-col p-5">
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="text-base font-semibold text-neutral-900">{product.title}</h3>
+
+        {/* Badges over image — only from real RPC data */}
+        <div className="absolute left-3 top-3 flex flex-wrap gap-2">
+          {product.is_featured ? (
+            <span className="rounded-full bg-neutral-900/90 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-white backdrop-blur">
+              Featured
+            </span>
+          ) : null}
           {category ? (
-            <span className="shrink-0 rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-neutral-500">
+            <span className="rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-neutral-800 shadow-sm backdrop-blur">
               {category}
             </span>
           ) : null}
         </div>
+      </div>
+
+      {/* Body */}
+      <div className="flex flex-1 flex-col p-5">
+        <h3 className="text-base font-semibold text-neutral-900">{product.title}</h3>
         {product.description ? (
           <p className="mt-2 flex-1 text-sm leading-relaxed text-neutral-600">
             {product.description}
           </p>
-        ) : null}
-        <div className="mt-4 flex items-center justify-between">
+        ) : (
+          <span className="flex-1" />
+        )}
+
+        <div className="mt-4 flex items-center justify-between border-t border-neutral-100 pt-4">
           {typeof product.moq === "number" ? (
-            <span className="text-xs font-medium text-neutral-500">MOQ {product.moq} pcs</span>
-          ) : (
-            <span />
-          )}
-          {href ? (
-            <span className="text-sm font-semibold text-neutral-900 group-hover:text-neutral-600">
-              {product.cta_text || "View"} →
+            <span className="rounded-md bg-neutral-100 px-2.5 py-1 text-xs font-semibold text-neutral-700">
+              MOQ {product.moq} pcs
             </span>
-          ) : null}
+          ) : (
+            <span className="text-xs font-medium text-neutral-400">Bulk orders</span>
+          )}
+
+          <span
+            className={
+              href
+                ? "inline-flex items-center rounded-md bg-neutral-900 px-4 py-2 text-xs font-semibold text-white transition-colors group-hover:bg-neutral-700"
+                : "inline-flex items-center rounded-md border border-neutral-300 px-4 py-2 text-xs font-semibold text-neutral-900"
+            }
+          >
+            {product.cta_text || "Get Pricing"}
+          </span>
         </div>
       </div>
-    </div>
+    </article>
   );
 
+  // Whole card links to the product's landing page when the RPC provides a
+  // slug; otherwise the CTA anchors to the on-page RFQ form (no fake URLs).
   return href ? (
     <Link href={href} className="block h-full">
       {inner}
     </Link>
   ) : (
-    inner
+    <a href="#rfq" className="block h-full">
+      {inner}
+    </a>
   );
 }

@@ -4,8 +4,8 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 /**
- * RFQ / Instant Quote — styled as a Production Request / Bulk Quote system,
- * not a basic contact form.
+ * RFQ / Instant Quote — black Production Request panel with yellow accents,
+ * rendered inside the page's SectionShell (which provides the #rfq anchor).
  *
  * Submit inserts a row into public.quote_requests via the anon Supabase
  * client (never the service role). The table stores products/countries as
@@ -48,11 +48,11 @@ export function RFQSection({
   body?: string | null;
   ctaLabel?: string | null;
 }) {
-  const title = heading || "Start a Production Request";
+  const title = heading || "Ready To Launch Your Clothing Brand?";
   const intro =
     body ||
     "Send your requirements and our merchandising team replies with pricing and lead time within one business day.";
-  const cta = ctaLabel || "Submit Production Request";
+  const cta = ctaLabel || "Get Instant Quote";
 
   const [values, setValues] = useState({
     product: "",
@@ -130,270 +130,270 @@ export function RFQSection({
   }
 
   const inputClass =
-    "w-full rounded-md border border-neutral-700 bg-neutral-800 px-3 py-2.5 text-sm text-white placeholder-neutral-500 focus:border-white focus:outline-none";
+    "w-full rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2.5 text-sm text-white placeholder-neutral-500 focus:border-[#FFC400] focus:outline-none";
   const labelClass = "mb-1.5 block text-sm font-medium text-neutral-300";
   const errorInputClass = "border-red-400 focus:border-red-400";
 
   return (
-    <section id="rfq" className="border-t border-neutral-200 bg-neutral-900 text-white">
-      <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
-        <div className="grid gap-12 lg:grid-cols-[1fr_1.4fr] lg:gap-16">
-          {/* ------------------------------------------------------------ */}
-          {/* Left rail — what this is and what happens next                */}
-          {/* ------------------------------------------------------------ */}
-          <div>
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-400">
-              Bulk Quote System
-            </span>
-            <h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">{title}</h2>
-            <p className="mt-3 max-w-md text-base leading-relaxed text-neutral-300 sm:text-lg">
-              {intro}
-            </p>
+    <div className="rounded-2xl bg-[#0A0A0A] p-6 text-white sm:p-10">
+      <div className="grid gap-10 lg:grid-cols-[1fr_1.4fr] lg:gap-14">
+        {/* ------------------------------------------------------------ */}
+        {/* Left rail — pitch and process                                 */}
+        {/* ------------------------------------------------------------ */}
+        <div>
+          <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#FFC400]">
+            Bulk Quote System
+          </span>
+          <h3 className="mt-2 text-2xl font-black uppercase leading-tight tracking-tight sm:text-3xl">
+            {title}
+          </h3>
+          <p className="mt-3 max-w-md text-base leading-relaxed text-neutral-300">
+            {intro}
+          </p>
 
-            <ol className="mt-8 space-y-5">
-              {[
-                { step: "01", label: "Submit your request", text: "Product, quantity and target timeline." },
-                { step: "02", label: "Merchandiser review", text: "A dedicated merchandiser checks feasibility and costs." },
-                { step: "03", label: "Quote in 24 hours", text: "Landed pricing with a sampling and production plan." },
-              ].map((s) => (
-                <li key={s.step} className="flex gap-4">
-                  <span className="mt-0.5 shrink-0 font-mono text-sm font-bold text-neutral-500">
-                    {s.step}
-                  </span>
-                  <div>
-                    <p className="text-sm font-semibold text-white">{s.label}</p>
-                    <p className="mt-0.5 text-sm leading-relaxed text-neutral-400">{s.text}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-
-            <div className="mt-8 flex flex-wrap gap-2">
-              {["MOQ from 300 pcs", "DDP shipping", "No obligation"].map((chip) => (
-                <span
-                  key={chip}
-                  className="rounded-full border border-neutral-700 px-3 py-1 text-xs font-medium text-neutral-300"
-                >
-                  {chip}
+          <ol className="mt-8 space-y-5">
+            {[
+              { step: "01", label: "Submit your request", text: "Product, quantity and target timeline." },
+              { step: "02", label: "Merchandiser review", text: "A dedicated merchandiser checks feasibility and costs." },
+              { step: "03", label: "Quote in 24 hours", text: "Landed pricing with a sampling and production plan." },
+            ].map((s) => (
+              <li key={s.step} className="flex gap-4">
+                <span className="mt-0.5 shrink-0 font-mono text-sm font-black text-[#FFC400]">
+                  {s.step}
                 </span>
-              ))}
-            </div>
-          </div>
-
-          {/* ------------------------------------------------------------ */}
-          {/* Right panel — the production request form                     */}
-          {/* ------------------------------------------------------------ */}
-          <div className="rounded-2xl border border-neutral-700 bg-neutral-800/50 p-6 sm:p-8">
-            {state === "success" ? (
-              <div role="status" className="flex min-h-[24rem] flex-col items-center justify-center text-center">
-                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-neutral-900">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-7 w-7"
-                    aria-hidden
-                  >
-                    <path d="M20 6 9 17l-5-5" />
-                  </svg>
-                </span>
-                <p className="mt-5 text-xl font-bold text-white">
-                  Quote request received. Our team will contact you shortly.
-                </p>
-                <p className="mt-2 max-w-sm text-sm leading-relaxed text-neutral-400">
-                  Your request is with our merchandising team — expect a reply within one
-                  business day.
-                </p>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} noValidate aria-label="Production request">
-                <div className="flex items-center justify-between gap-3 border-b border-neutral-700 pb-4">
-                  <p className="text-sm font-semibold uppercase tracking-wide text-neutral-300">
-                    Production Request
-                  </p>
-                  <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-neutral-900">
-                    Reply in 24 hrs
-                  </span>
+                <div>
+                  <p className="text-sm font-bold text-white">{s.label}</p>
+                  <p className="mt-0.5 text-sm leading-relaxed text-neutral-400">{s.text}</p>
                 </div>
+              </li>
+            ))}
+          </ol>
 
-                {state === "error" ? (
-                  <div
-                    role="alert"
-                    className="mt-5 rounded-md border border-red-400 bg-red-950/40 px-4 py-3 text-sm text-red-200"
-                  >
-                    Something went wrong. Please try again.
-                  </div>
-                ) : null}
-
-                {/* Order specs */}
-                <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2">
-                  <Field
-                    id="product"
-                    label="Product"
-                    required
-                    value={values.product}
-                    onChange={update("product")}
-                    error={errors.product}
-                    inputClass={inputClass}
-                    labelClass={labelClass}
-                    errorInputClass={errorInputClass}
-                    placeholder="e.g. T-shirts, hoodies"
-                  />
-                  <Field
-                    id="quantity"
-                    label="Quantity"
-                    type="number"
-                    required
-                    value={values.quantity}
-                    onChange={update("quantity")}
-                    error={errors.quantity}
-                    inputClass={inputClass}
-                    labelClass={labelClass}
-                    errorInputClass={errorInputClass}
-                    placeholder="Total pieces"
-                  />
-                  <Field
-                    id="country"
-                    label="Country"
-                    value={values.country}
-                    onChange={update("country")}
-                    inputClass={inputClass}
-                    labelClass={labelClass}
-                    errorInputClass={errorInputClass}
-                    placeholder="Delivery country"
-                  />
-                  <div>
-                    <label htmlFor="rfq-timeline" className={labelClass}>
-                      Timeline
-                    </label>
-                    <select
-                      id="rfq-timeline"
-                      name="timeline"
-                      value={values.timeline}
-                      onChange={update("timeline")}
-                      className={`${inputClass} appearance-none`}
-                    >
-                      <option value="" className="bg-neutral-800">
-                        Select a timeline
-                      </option>
-                      {TIMELINE_OPTIONS.map((t) => (
-                        <option key={t} value={t} className="bg-neutral-800">
-                          {t}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label htmlFor="rfq-requirements" className={labelClass}>
-                      Requirements
-                    </label>
-                    <textarea
-                      id="rfq-requirements"
-                      name="requirements"
-                      rows={4}
-                      value={values.requirements}
-                      onChange={update("requirements")}
-                      className={inputClass}
-                      placeholder="Fabric, GSM, colours, sizes, decoration, packaging — anything from your tech pack."
-                    />
-                  </div>
-
-                  {/* Upload artwork — visual only, storage not connected yet */}
-                  <div className="sm:col-span-2">
-                    <span className={labelClass}>Upload Artwork</span>
-                    <div
-                      aria-disabled="true"
-                      className="flex flex-col items-center justify-center gap-1.5 rounded-md border border-dashed border-neutral-600 bg-neutral-800/60 px-4 py-6 text-center"
-                    >
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.6"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="h-6 w-6 text-neutral-500"
-                        aria-hidden
-                      >
-                        <path d="M12 16V4M7 9l5-5 5 5" />
-                        <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />
-                      </svg>
-                      <p className="text-sm font-medium text-neutral-300">
-                        Artwork &amp; tech pack upload
-                      </p>
-                      <p className="text-xs text-neutral-500">
-                        Coming soon — for now, describe artwork in Requirements or email it
-                        after we reply.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Contact details */}
-                <div className="mt-6 border-t border-neutral-700 pt-6">
-                  <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-neutral-400">
-                    Your Details
-                  </p>
-                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                    <Field
-                      id="company"
-                      label="Company Name"
-                      value={values.company}
-                      onChange={update("company")}
-                      inputClass={inputClass}
-                      labelClass={labelClass}
-                      errorInputClass={errorInputClass}
-                      placeholder="Your brand or company"
-                    />
-                    <Field
-                      id="email"
-                      label="Email"
-                      type="email"
-                      required
-                      value={values.email}
-                      onChange={update("email")}
-                      error={errors.email}
-                      inputClass={inputClass}
-                      labelClass={labelClass}
-                      errorInputClass={errorInputClass}
-                      placeholder="you@company.com"
-                    />
-                    <Field
-                      id="phone"
-                      label="Phone"
-                      type="tel"
-                      value={values.phone}
-                      onChange={update("phone")}
-                      inputClass={inputClass}
-                      labelClass={labelClass}
-                      errorInputClass={errorInputClass}
-                      placeholder="Include country code"
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-8">
-                  <button
-                    type="submit"
-                    disabled={state === "submitting"}
-                    className="inline-flex w-full items-center justify-center rounded-md bg-white px-6 py-3.5 text-sm font-semibold text-neutral-900 transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-70"
-                  >
-                    {state === "submitting" ? "Submitting…" : cta}
-                  </button>
-                  <p className="mt-3 text-center text-xs text-neutral-500">
-                    Reviewed by a merchandiser — not a bot. No spam, no obligation.
-                  </p>
-                </div>
-              </form>
-            )}
+          <div className="mt-8 flex flex-wrap gap-2">
+            {["100% Secure", "24/7 Support", "MOQ from 300 pcs", "No obligation"].map((chip) => (
+              <span
+                key={chip}
+                className="rounded-full border border-neutral-700 px-3 py-1 text-xs font-semibold text-neutral-300"
+              >
+                {chip}
+              </span>
+            ))}
           </div>
         </div>
+
+        {/* ------------------------------------------------------------ */}
+        {/* Right panel — the production request form                     */}
+        {/* ------------------------------------------------------------ */}
+        <div className="rounded-2xl border border-neutral-800 bg-[#111111] p-5 sm:p-7">
+          {state === "success" ? (
+            <div role="status" className="flex min-h-[24rem] flex-col items-center justify-center text-center">
+              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#FFC400] text-black">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-7 w-7"
+                  aria-hidden
+                >
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+              </span>
+              <p className="mt-5 text-xl font-bold text-white">
+                Quote request received. Our team will contact you shortly.
+              </p>
+              <p className="mt-2 max-w-sm text-sm leading-relaxed text-neutral-400">
+                Your request is with our merchandising team — expect a reply within one
+                business day.
+              </p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} noValidate aria-label="Production request">
+              <div className="flex items-center justify-between gap-3 border-b border-neutral-800 pb-4">
+                <p className="text-sm font-bold uppercase tracking-wide text-neutral-200">
+                  Production Request
+                </p>
+                <span className="rounded-full bg-[#FFC400] px-2.5 py-1 text-[11px] font-bold text-black">
+                  Reply in 24 hrs
+                </span>
+              </div>
+
+              {state === "error" ? (
+                <div
+                  role="alert"
+                  className="mt-5 rounded-md border border-red-400 bg-red-950/40 px-4 py-3 text-sm text-red-200"
+                >
+                  Something went wrong. Please try again.
+                </div>
+              ) : null}
+
+              {/* Order specs */}
+              <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <Field
+                  id="product"
+                  label="Product"
+                  required
+                  value={values.product}
+                  onChange={update("product")}
+                  error={errors.product}
+                  inputClass={inputClass}
+                  labelClass={labelClass}
+                  errorInputClass={errorInputClass}
+                  placeholder="e.g. T-shirts, hoodies"
+                />
+                <Field
+                  id="quantity"
+                  label="Quantity (Pcs)"
+                  type="number"
+                  required
+                  value={values.quantity}
+                  onChange={update("quantity")}
+                  error={errors.quantity}
+                  inputClass={inputClass}
+                  labelClass={labelClass}
+                  errorInputClass={errorInputClass}
+                  placeholder="Total pieces"
+                />
+                <Field
+                  id="country"
+                  label="Country"
+                  value={values.country}
+                  onChange={update("country")}
+                  inputClass={inputClass}
+                  labelClass={labelClass}
+                  errorInputClass={errorInputClass}
+                  placeholder="Delivery country"
+                />
+                <div>
+                  <label htmlFor="rfq-timeline" className={labelClass}>
+                    Timeline
+                  </label>
+                  <select
+                    id="rfq-timeline"
+                    name="timeline"
+                    value={values.timeline}
+                    onChange={update("timeline")}
+                    className={`${inputClass} appearance-none`}
+                  >
+                    <option value="" className="bg-neutral-900">
+                      Select a timeline
+                    </option>
+                    {TIMELINE_OPTIONS.map((t) => (
+                      <option key={t} value={t} className="bg-neutral-900">
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label htmlFor="rfq-requirements" className={labelClass}>
+                    Requirements
+                  </label>
+                  <textarea
+                    id="rfq-requirements"
+                    name="requirements"
+                    rows={4}
+                    value={values.requirements}
+                    onChange={update("requirements")}
+                    className={inputClass}
+                    placeholder="Fabric, GSM, colours, sizes, decoration, packaging — anything from your tech pack."
+                  />
+                </div>
+
+                {/* Upload artwork — visual only, storage not connected yet */}
+                <div className="sm:col-span-2">
+                  <span className={labelClass}>Upload Artwork</span>
+                  <div
+                    aria-disabled="true"
+                    className="flex flex-col items-center justify-center gap-1.5 rounded-md border border-dashed border-neutral-700 bg-neutral-900/60 px-4 py-6 text-center"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="h-6 w-6 text-neutral-500"
+                      aria-hidden
+                    >
+                      <path d="M12 16V4M7 9l5-5 5 5" />
+                      <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />
+                    </svg>
+                    <p className="text-sm font-medium text-neutral-300">
+                      Artwork &amp; tech pack upload
+                    </p>
+                    <p className="text-xs text-neutral-500">
+                      Coming soon — for now, describe artwork in Requirements or email it
+                      after we reply.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact details */}
+              <div className="mt-6 border-t border-neutral-800 pt-6">
+                <p className="mb-4 text-xs font-bold uppercase tracking-wide text-neutral-400">
+                  Your Details
+                </p>
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                  <Field
+                    id="company"
+                    label="Company Name"
+                    value={values.company}
+                    onChange={update("company")}
+                    inputClass={inputClass}
+                    labelClass={labelClass}
+                    errorInputClass={errorInputClass}
+                    placeholder="Your brand or company"
+                  />
+                  <Field
+                    id="email"
+                    label="Email"
+                    type="email"
+                    required
+                    value={values.email}
+                    onChange={update("email")}
+                    error={errors.email}
+                    inputClass={inputClass}
+                    labelClass={labelClass}
+                    errorInputClass={errorInputClass}
+                    placeholder="you@company.com"
+                  />
+                  <Field
+                    id="phone"
+                    label="Phone"
+                    type="tel"
+                    value={values.phone}
+                    onChange={update("phone")}
+                    inputClass={inputClass}
+                    labelClass={labelClass}
+                    errorInputClass={errorInputClass}
+                    placeholder="Include country code"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-8">
+                <button
+                  type="submit"
+                  disabled={state === "submitting"}
+                  className="inline-flex w-full items-center justify-center rounded-md bg-[#FFC400] px-6 py-3.5 text-sm font-bold uppercase tracking-wide text-black transition-colors hover:bg-[#e6b100] disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {state === "submitting" ? "Submitting…" : `${cta} →`}
+                </button>
+                <p className="mt-3 text-center text-xs text-neutral-500">
+                  Reviewed by a merchandiser — not a bot. No spam, no obligation.
+                </p>
+              </div>
+            </form>
+          )}
+        </div>
       </div>
-    </section>
+    </div>
   );
 }
 

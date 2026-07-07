@@ -4,24 +4,20 @@ import {
   type CountryAssets,
   type Product,
 } from "@/lib/landing";
+import { SpecIcon } from "./icons";
 
 /**
- * Hero section — premium B2B apparel manufacturer layout.
+ * Hero — black band with yellow accent, matching the reference design.
  *
- * Page-specific content (H1, subtitle, description, images, trust badges,
- * shipping, MOQ) is sourced from the RPC JSON. Only generic, brand-level UI
- * (section labels, and the manufacturer's standard lead-time / turnaround,
- * which are identical across every page) is defined here as constants.
+ * Page-specific content (H1, description, hero image, trust badges, shipping)
+ * comes from the RPC. Generic brand-level UI (service-mode chips, stat chips,
+ * quote-card labels) is constant across pages. The right-side quote card is a
+ * visual shortcut into the full working RFQ form (#rfq) — no duplicate insert.
  */
 
-// Generic brand constants — NOT page-specific SEO. Same on every landing page.
-// Used only as a fallback / for the generic "Lead Time" trust stat the design
-// requires. Page-specific values (e.g. MOQ) still prefer the RPC data below.
+// Generic brand constants — identical on every page, not page-specific SEO.
 const DEFAULT_MOQ = 300;
-const LEAD_TIME = "30–45 days";
-const QUOTE_TURNAROUND = "24 hrs";
 
-/** Smallest MOQ advertised across the page's products, or the brand default. */
 function resolveMoq(products: Product[]): number {
   const values = products
     .map((p) => p.moq)
@@ -29,12 +25,11 @@ function resolveMoq(products: Product[]): number {
   return values.length > 0 ? Math.min(...values) : DEFAULT_MOQ;
 }
 
-/** First product image available (featured first), if any. */
-function resolveProductImage(products: Product[]): { url: string; alt: string } | null {
-  const featured = products.find((p) => p.is_featured && p.image_url);
-  const any = products.find((p) => p.image_url);
-  const chosen = featured ?? any;
-  return chosen?.image_url ? { url: chosen.image_url, alt: chosen.title ?? "Product" } : null;
+/** Split the DB headline so the last word can carry the yellow accent. */
+function splitHeadline(title: string): { head: string; accent: string } {
+  const words = title.trim().split(/\s+/);
+  if (words.length < 2) return { head: title, accent: "" };
+  return { head: words.slice(0, -1).join(" "), accent: words[words.length - 1] };
 }
 
 export function HeroSection({ data }: { data: LandingPageData }) {
@@ -43,102 +38,107 @@ export function HeroSection({ data }: { data: LandingPageData }) {
   const products = data.products ?? [];
   const hero = blockByKey(data.content_blocks, "hero");
 
-  // Page-specific copy from RPC (with graceful fallbacks up the chain).
   const title = hero?.heading || page.h1 || page.title || "Custom Apparel Manufacturing";
-  const subtitle = page.title && page.title !== title ? page.title : null;
+  const { head, accent } = splitHeadline(title);
   const description = hero?.body || page.meta_description || assets.factory_message;
-
-  // Page-specific imagery from RPC.
-  const factoryImage = hero?.image_url || page.hero_image_url || assets.hero_image_url;
-  const factoryImageAlt = hero?.image_alt || `${title} — 1 & 9 Apparel factory`;
-  const productImage = resolveProductImage(products);
-
-  // Trust signals.
-  const badges = (assets.trust_badges ?? []).filter((b) => b.label || b.image_url);
-  const leadBadge = badges[0]?.label ?? null;
-
+  const heroImage = hero?.image_url || page.hero_image_url || assets.hero_image_url;
+  const heroImageAlt = hero?.image_alt || `${title} — 1 & 9 Apparel`;
   const moq = resolveMoq(products);
+  const badges = (assets.trust_badges ?? []).filter((b) => b.label || b.image_url);
 
-  const primaryHref = hero?.cta_url || assets.cta_url || "#rfq";
-
-  const stats: { label: string; value: string }[] = [
-    { label: "Minimum Order", value: `${moq} pcs` },
-    { label: "Lead Time", value: LEAD_TIME },
-    { label: "Quote Turnaround", value: QUOTE_TURNAROUND },
+  const statChips = [
+    { icon: "moq" as const, top: `MOQ FROM`, bottom: `${moq} PCS` },
+    { icon: "capability" as const, top: "OEM / ODM", bottom: "SERVICE" },
+    { icon: "shipping" as const, top: "DDP", bottom: "SHIPPING" },
+    { icon: "factory" as const, top: "FACTORY", bottom: "DIRECT PRICE" },
   ];
 
   return (
-    <section className="border-b border-neutral-200 bg-white">
-      <div className="mx-auto grid max-w-7xl items-center gap-12 px-6 py-16 sm:py-20 lg:grid-cols-2 lg:gap-16 lg:py-24">
-        {/* ---------------------------------------------------------------- */}
-        {/* Left column — messaging + CTAs + trust                            */}
-        {/* ---------------------------------------------------------------- */}
-        <div>
-          <span className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-3 py-1 text-xs font-medium uppercase tracking-wider text-neutral-600">
-            <span className="h-1.5 w-1.5 rounded-full bg-neutral-900" aria-hidden />
-            1 &amp; 9 Apparel · Bangladesh
-          </span>
+    <section className="relative overflow-hidden bg-[#0A0A0A] text-white">
+      {/* DB hero image as a subtle backdrop, when available */}
+      {heroImage ? (
+        <img
+          src={heroImage}
+          alt={heroImageAlt}
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-25"
+        />
+      ) : null}
+      <div
+        className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#0A0A0A] via-[#0A0A0A]/85 to-[#0A0A0A]/40"
+        aria-hidden
+      />
 
-          <h1 className="mt-5 text-4xl font-bold leading-[1.08] tracking-tight text-neutral-900 sm:text-5xl">
-            {title}
+      <div className="relative mx-auto grid max-w-7xl gap-10 px-6 py-14 sm:py-16 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-14 lg:py-20">
+        {/* ------------------------------------------------------------ */}
+        {/* Left — headline, service modes, description, CTAs, chips      */}
+        {/* ------------------------------------------------------------ */}
+        <div>
+          <h1 className="text-4xl font-black uppercase leading-[1.02] tracking-tight sm:text-5xl lg:text-6xl">
+            {head}
+            {accent ? (
+              <>
+                {" "}
+                <span className="text-[#FFC400]">{accent}</span>
+              </>
+            ) : null}
           </h1>
 
-          {subtitle ? (
-            <p className="mt-3 text-lg font-medium text-neutral-500">{subtitle}</p>
-          ) : null}
+          <p className="mt-4 text-lg font-bold text-white sm:text-xl">
+            Private Label <span className="text-[#FFC400]">•</span> OEM{" "}
+            <span className="text-[#FFC400]">•</span> ODM{" "}
+            <span className="text-[#FFC400]">•</span> Low MOQ
+          </p>
 
           {description ? (
-            <p className="mt-5 max-w-xl text-lg leading-relaxed text-neutral-600">
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-neutral-300 sm:text-lg">
               {description}
             </p>
           ) : null}
 
-          {/* CTAs */}
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <a
-              href={primaryHref}
-              className="inline-flex items-center justify-center rounded-md bg-neutral-900 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-neutral-700"
+              href="#rfq"
+              className="inline-flex items-center justify-center rounded-md bg-[#FFC400] px-6 py-3 text-sm font-bold uppercase tracking-wide text-black transition-colors hover:bg-[#e6b100]"
             >
-              Request Bulk Quote
+              Get Instant Quote →
             </a>
             <a
-              href="#production-process"
-              className="inline-flex items-center justify-center rounded-md border border-neutral-300 px-6 py-3 text-sm font-semibold text-neutral-900 transition-colors hover:border-neutral-900"
+              href="#related-products"
+              className="inline-flex items-center justify-center rounded-md border border-neutral-600 px-6 py-3 text-sm font-bold uppercase tracking-wide text-white transition-colors hover:border-white"
             >
-              View Production Options
+              View Products
             </a>
           </div>
 
-          {/* Spec strip — MOQ / Lead Time / Turnaround */}
-          <dl className="mt-10 grid grid-cols-3 gap-3 sm:gap-4">
-            {stats.map((s) => (
-              <div
-                key={s.label}
-                className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-3 sm:px-4"
-              >
-                <dt className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
-                  {s.label}
-                </dt>
-                <dd className="mt-1 text-base font-bold text-neutral-900 sm:text-lg">
-                  {s.value}
-                </dd>
-              </div>
-            ))}
-          </dl>
-
           {assets.shipping_text ? (
-            <p className="mt-6 max-w-xl text-sm leading-relaxed text-neutral-500">
+            <p className="mt-6 max-w-xl text-sm leading-relaxed text-neutral-400">
               {assets.shipping_text}
             </p>
           ) : null}
 
-          {/* Trust badges */}
+          {/* Stat chips row */}
+          <div className="mt-10 grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4">
+            {statChips.map((chip) => (
+              <div key={chip.top + chip.bottom} className="flex items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#FFC400] text-[#FFC400]">
+                  <SpecIcon icon={chip.icon} />
+                </span>
+                <span className="text-[11px] font-bold uppercase leading-tight tracking-wide text-neutral-200">
+                  {chip.top}
+                  <br />
+                  {chip.bottom}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Trust badges from RPC country assets */}
           {badges.length > 0 ? (
-            <ul className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
+            <ul className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-neutral-800 pt-6">
               {badges.map((b, i) => (
                 <li
                   key={i}
-                  className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-neutral-500"
+                  className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-400"
                 >
                   {b.image_url ? (
                     <img src={b.image_url} alt={b.label ?? "Certification"} className="h-6 w-auto" />
@@ -150,67 +150,42 @@ export function HeroSection({ data }: { data: LandingPageData }) {
           ) : null}
         </div>
 
-        {/* ---------------------------------------------------------------- */}
-        {/* Right column — visual showcase + RFQ mini card                    */}
-        {/* ---------------------------------------------------------------- */}
-        <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-3 shadow-sm sm:p-4">
-          <div className="relative overflow-hidden rounded-xl bg-neutral-100">
-            {factoryImage ? (
-              <img
-                src={factoryImage}
-                alt={factoryImageAlt}
-                className="aspect-[4/3] w-full object-cover"
-              />
-            ) : (
-              <div className="flex aspect-[4/3] w-full items-center justify-center text-sm text-neutral-400">
-                1 &amp; 9 Apparel
-              </div>
-            )}
+        {/* ------------------------------------------------------------ */}
+        {/* Right — instant quote card (visual shortcut to #rfq)          */}
+        {/* ------------------------------------------------------------ */}
+        <aside className="lg:pt-2">
+          <div className="rounded-2xl border border-neutral-800 bg-[#111111] p-5 shadow-2xl sm:p-6">
+            <p className="text-sm font-extrabold uppercase tracking-wide text-white">
+              Get Your Instant Quote
+            </p>
 
-            {/* Certification pill (page-specific, from RPC trust badges) */}
-            {leadBadge ? (
-              <span className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-neutral-800 shadow-sm backdrop-blur">
-                {leadBadge}
-              </span>
-            ) : null}
-
-            {/* Product image inset (page-specific, from RPC products) */}
-            {productImage ? (
-              <img
-                src={productImage.url}
-                alt={productImage.alt}
-                className="absolute bottom-3 left-3 h-20 w-20 rounded-lg object-cover shadow-md ring-2 ring-white sm:h-24 sm:w-24"
-              />
-            ) : null}
-          </div>
-
-          {/* RFQ mini card */}
-          <div className="mt-3 rounded-xl border border-neutral-200 bg-white p-4 sm:mt-4 sm:p-5">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-neutral-900">Request a Bulk Quote</p>
-                <p className="mt-0.5 text-xs text-neutral-500">
-                  MOQ {moq} pcs · Lead time {LEAD_TIME} · Reply in {QUOTE_TURNAROUND}
-                </p>
-              </div>
-              <span className="hidden shrink-0 rounded-full bg-neutral-900 px-2.5 py-1 text-[11px] font-semibold text-white sm:inline">
-                Free
-              </span>
+            <div className="mt-4 space-y-3.5">
+              {[
+                { label: "Product", placeholder: "e.g. T-shirts, hoodies" },
+                { label: "Quantity (Pcs)", placeholder: `e.g. ${moq}` },
+                { label: "Country", placeholder: "Delivery country" },
+                { label: "Your Email", placeholder: "name@email.com" },
+              ].map((f) => (
+                <div key={f.label}>
+                  <p className="mb-1 text-xs font-semibold text-neutral-400">{f.label}</p>
+                  <div className="rounded-md border border-neutral-700 bg-[#0A0A0A] px-3 py-2.5 text-sm text-neutral-500">
+                    {f.placeholder}
+                  </div>
+                </div>
+              ))}
             </div>
 
-            <div className="mt-3 flex items-center gap-2">
-              <span className="flex-1 truncate rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-400">
-                you@company.com
-              </span>
-              <a
-                href="#rfq"
-                className="shrink-0 rounded-md bg-neutral-900 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-neutral-700"
-              >
-                Get Quote
-              </a>
-            </div>
+            <a
+              href="#rfq"
+              className="mt-5 inline-flex w-full items-center justify-center rounded-md bg-[#FFC400] px-5 py-3 text-sm font-bold uppercase tracking-wide text-black transition-colors hover:bg-[#e6b100]"
+            >
+              Get Quote Now
+            </a>
+            <p className="mt-3 text-center text-xs text-neutral-500">
+              Opens the full production request below — reply within 24 hours.
+            </p>
           </div>
-        </div>
+        </aside>
       </div>
     </section>
   );

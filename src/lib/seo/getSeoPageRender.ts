@@ -33,6 +33,8 @@ export async function getSeoPageRender(slug: string): Promise<SeoPageRenderResul
       section_blocks: payload.section_blocks ?? [],
       assigned_images: payload.assigned_images ?? [],
       faqs: payload.faqs ?? [],
+      products: payload.products ?? [],
+      internal_links: payload.internal_links ?? {},
     },
   };
 }

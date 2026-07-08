@@ -63,11 +63,33 @@ export interface FAQItem {
   include_in_schema: boolean | null;
 }
 
+export interface SeoProduct {
+  slug: string | null;
+  title: string | null;
+  description: string | null;
+  cta_text: string | null;
+  moq: number | null;
+  image_url: string | null;
+  sort_order: number | null;
+  is_featured: boolean | null;
+}
+
+export interface SeoInternalLink {
+  anchor: string | null;
+  slug: string | null;
+  sort_order: number | null;
+}
+
+/** Keyed by link group, e.g. "auto_related", "related_products", "related_countries". */
+export type SeoInternalLinks = Record<string, SeoInternalLink[]>;
+
 export interface SeoPageRenderResponse {
   page: SeoPage | null;
   section_blocks: SectionBlock[];
   assigned_images: AssignedImage[];
   faqs: FAQItem[];
+  products: SeoProduct[];
+  internal_links: SeoInternalLinks;
 }
 
 /** Discriminated fetch result — the page renders against this, never throws. */

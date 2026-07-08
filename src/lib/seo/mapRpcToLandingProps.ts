@@ -2,7 +2,9 @@ import type {
   ContentBlock,
   Faq,
   GalleryImage,
+  InternalLinks,
   LandingPageData,
+  Product,
 } from "@/lib/landing";
 import type { SeoPageRenderResponse } from "@/types/seo";
 import { getSectionImage } from "./imageResolver";
@@ -17,7 +19,7 @@ import { getSectionImage } from "./imageResolver";
  * section_blocks.image_url is intentionally ignored as an image source.
  */
 export function mapRpcToLandingProps(data: SeoPageRenderResponse): LandingPageData {
-  const { page, section_blocks, assigned_images, faqs } = data;
+  const { page, section_blocks, assigned_images, faqs, products, internal_links } = data;
 
   const heroImage = getSectionImage("hero", assigned_images);
 
@@ -43,6 +45,13 @@ export function mapRpcToLandingProps(data: SeoPageRenderResponse): LandingPageDa
     include_in_schema: f.include_in_schema,
   }));
 
+  // Product cards and grouped internal links pass straight through — the RPC
+  // emits the same shapes the landing components consume.
+  const mappedProducts: Product[] = [...(products ?? [])].sort(
+    (a, b) => (a.sort_order ?? 999) - (b.sort_order ?? 999)
+  );
+  const mappedLinks: InternalLinks = internal_links ?? {};
+
   // Non-hero assigned images feed the intro image grid, in display_order.
   const gallery_images: GalleryImage[] = (assigned_images ?? [])
     .filter((img) => Boolean(img.image_url) && img.id !== heroImage?.id)
@@ -61,10 +70,10 @@ export function mapRpcToLandingProps(data: SeoPageRenderResponse): LandingPageDa
           hero_image_url: heroImage?.image_url ?? null,
         }
       : null,
-    // Not provided by get_seo_page_render — components skip these cleanly.
+    // Not provided by get_seo_page_render — components skip this cleanly.
     country_assets: null,
-    products: [],
-    internal_links: null,
+    products: mappedProducts,
+    internal_links: mappedLinks,
     content_blocks,
     faqs: mappedFaqs,
     gallery_images,

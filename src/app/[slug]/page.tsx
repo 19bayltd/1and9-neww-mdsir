@@ -2,21 +2,25 @@ import { cache } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { fetchLandingPage } from "@/lib/landing";
+import { getSeoPageRender } from "@/lib/seo/getSeoPageRender";
+import { getSectionImage } from "@/lib/seo/imageResolver";
+import { mapRpcToLandingProps } from "@/lib/seo/mapRpcToLandingProps";
 import { PSEOPageRenderer } from "@/components/landing/PSEOPageRenderer";
 
 /**
- * Dynamic PSEO landing route.
+ * Dynamic SEO landing route.
  *
- * URLs like /custom-t-shirt-manufacturer-usa are resolved entirely from the
- * `get_landing_page_view` Supabase RPC. No page-specific copy is hardcoded —
- * PSEOPageRenderer maps the DB-ordered content blocks to section components.
+ * Data comes entirely from the `get_seo_page_render` Supabase RPC; the
+ * original landing visual system (src/components/landing) renders it via the
+ * mapRpcToLandingProps adapter. Section order comes from the DB
+ * (section_blocks[].position → content_blocks[].sort_order); no page copy or
+ * layout order is hardcoded.
  */
 
 type PageParams = { slug: string };
 
 // Dedupe the RPC call between generateMetadata() and the page render.
-const getPage = cache(fetchLandingPage);
+const getPage = cache(getSeoPageRender);
 
 export async function generateMetadata({
   params,
@@ -26,24 +30,31 @@ export async function generateMetadata({
   const { slug } = await params;
   const result = await getPage(slug);
 
-  if (result.status !== "ok") {
+  if (result.status !== "ok" || !result.data.page) {
     return { title: "1 & 9 Apparel" };
   }
 
-  const { page, country_assets } = result.data;
-  const ogImage = country_assets?.meta_image_url ?? page?.hero_image_url ?? undefined;
+  const { page, assigned_images } = result.data;
+  const title = page.meta_title || page.title || "1 & 9 Apparel";
+  const description = page.meta_description ?? undefined;
+  // OG image: the page's assigned hero image (real DB data, never invented).
+  const ogImage = getSectionImage("hero", assigned_images)?.image_url ?? undefined;
 
   return {
     // RPC meta_title already carries the brand suffix — bypass the layout template.
-    title: { absolute: page?.meta_title || page?.title || "1 & 9 Apparel" },
-    description: page?.meta_description ?? undefined,
-    alternates: page?.canonical_url ? { canonical: page.canonical_url } : undefined,
-    robots: page?.robots ?? undefined,
+    title: { absolute: title },
+    description,
     openGraph: {
-      title: page?.meta_title || page?.title || undefined,
-      description: page?.meta_description ?? undefined,
+      title,
+      description,
       images: ogImage ? [{ url: ogImage }] : undefined,
       type: "website",
+    },
+    twitter: {
+      card: ogImage ? "summary_large_image" : "summary",
+      title,
+      description,
+      images: ogImage ? [ogImage] : undefined,
     },
   };
 }
@@ -62,11 +73,11 @@ export default async function LandingPage({
   }
 
   // No page → standard 404.
-  if (result.status === "not_found") {
+  if (result.status === "not_found" || !result.data.page) {
     notFound();
   }
 
-  return <PSEOPageRenderer data={result.data} />;
+  return <PSEOPageRenderer data={mapRpcToLandingProps(result.data)} />;
 }
 
 function ServiceUnavailable() {

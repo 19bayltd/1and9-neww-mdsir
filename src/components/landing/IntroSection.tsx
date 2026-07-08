@@ -1,4 +1,4 @@
-import type { ContentBlock, LandingPageData } from "@/lib/landing";
+import type { ContentBlock, GalleryImage, LandingPageData } from "@/lib/landing";
 import { Paragraphs } from "./_shared";
 import { SpecIcon, type IconName } from "./icons";
 
@@ -6,9 +6,10 @@ import { SpecIcon, type IconName } from "./icons";
  * Intro — text + image grid, per the reference layout.
  *
  * Body copy comes verbatim from the RPC intro block. The image grid uses ONLY
- * images already present in the RPC payload (block image, page/country hero
- * image, product images); if none exist the grid is skipped cleanly. The four
- * mini feature chips are generic brand-level labels, identical across pages.
+ * images already present in the RPC payload (the assigned_images gallery,
+ * block image, product images); if none exist the grid is skipped cleanly.
+ * The four mini feature chips are generic brand-level labels, identical
+ * across pages.
  */
 
 const INTRO_FEATURES: { label: string; icon: IconName }[] = [
@@ -18,15 +19,22 @@ const INTRO_FEATURES: { label: string; icon: IconName }[] = [
   { label: "On-Time DDP Delivery", icon: "shipping" },
 ];
 
-/** Collect unique, real image URLs from the RPC payload only. */
-function collectImages(data: LandingPageData, block: ContentBlock): string[] {
-  const urls = [
-    block.image_url,
-    data.page?.hero_image_url,
-    data.country_assets?.hero_image_url,
-    ...(data.products ?? []).map((p) => p.image_url),
-  ].filter((u): u is string => Boolean(u));
-  return [...new Set(urls)].slice(0, 6);
+/** Collect unique, real images from the RPC payload only. */
+function collectImages(data: LandingPageData, block: ContentBlock): GalleryImage[] {
+  const candidates: GalleryImage[] = [
+    ...(data.gallery_images ?? []),
+    { url: block.image_url ?? "", alt: block.image_alt },
+    { url: data.country_assets?.hero_image_url ?? "", alt: null },
+    ...(data.products ?? []).map((p) => ({ url: p.image_url ?? "", alt: p.title })),
+  ];
+  const seen = new Set<string>();
+  return candidates
+    .filter((img) => {
+      if (!img.url || seen.has(img.url)) return false;
+      seen.add(img.url);
+      return true;
+    })
+    .slice(0, 6);
 }
 
 export function IntroSection({
@@ -69,11 +77,11 @@ export function IntroSection({
       {/* Image grid — DB images only; skipped when none exist */}
       {images.length > 0 ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {images.map((src, i) => (
+          {images.map((img, i) => (
             <img
-              key={src}
-              src={src}
-              alt={block.image_alt || `1 & 9 Apparel manufacturing ${i + 1}`}
+              key={img.url}
+              src={img.url}
+              alt={img.alt || `1 & 9 Apparel manufacturing ${i + 1}`}
               loading="lazy"
               decoding="async"
               className="aspect-[4/3] w-full rounded-xl object-cover ring-1 ring-neutral-200"

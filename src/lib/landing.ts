@@ -1,12 +1,11 @@
-import { supabase } from "@/lib/supabase";
-
 /**
- * Defensive types for the `get_landing_page_view` RPC payload.
+ * View-model types for the landing UI components.
  *
- * The exact JSON may vary slightly between pages (nullable fields, optional
- * groups), so every field is treated as optional / nullable at the type level
- * and guarded at render time. Nothing about page content is hardcoded — the
- * frontend only knows the *shape*, never the copy.
+ * These shapes originally mirrored the `get_landing_page_view` RPC. Today the
+ * data comes from `get_seo_page_render` and is mapped into this shape by
+ * src/lib/seo/mapRpcToLandingProps.ts — the components stay purely
+ * presentational. Every field is optional / nullable and guarded at render
+ * time; nothing about page content is hardcoded.
  */
 
 export interface LandingPage {
@@ -80,6 +79,12 @@ export interface InternalLink {
 /** internal_links is an object keyed by link group (e.g. "related_products"). */
 export type InternalLinks = Record<string, InternalLink[]>;
 
+/** A DB-assigned image for the intro gallery (from assigned_images). */
+export interface GalleryImage {
+  url: string;
+  alt?: string | null;
+}
+
 export interface LandingPageData {
   page?: LandingPage | null;
   country_assets?: CountryAssets | null;
@@ -87,35 +92,8 @@ export interface LandingPageData {
   faqs?: Faq[] | null;
   products?: Product[] | null;
   internal_links?: InternalLinks | null;
-}
-
-export type LandingPageResult =
-  | { status: "ok"; data: LandingPageData }
-  | { status: "not_found" }
-  | { status: "error"; message: string };
-
-/**
- * Fetch a landing page by slug via the deterministic Supabase RPC.
- * Never throws — returns a discriminated result the page can render against.
- */
-export async function fetchLandingPage(slug: string): Promise<LandingPageResult> {
-  const { data, error } = await supabase.rpc("get_landing_page_view", {
-    page_slug: slug,
-  });
-
-  if (error) {
-    // Log the real error server-side; the UI shows a generic message.
-    console.error(`[get_landing_page_view] RPC error for slug "${slug}":`, error);
-    return { status: "error", message: error.message };
-  }
-
-  // RPC returns SQL null when the page does not exist / is unpublished.
-  const payload = data as LandingPageData | null;
-  if (!payload || !payload.page || !payload.page.slug) {
-    return { status: "not_found" };
-  }
-
-  return { status: "ok", data: payload };
+  /** Non-hero assigned images, in display_order — used by the intro grid. */
+  gallery_images?: GalleryImage[] | null;
 }
 
 /** Find the first content block whose key matches any of the given keys. */

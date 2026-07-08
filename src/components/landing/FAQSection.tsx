@@ -16,8 +16,8 @@ export function FAQSection({ data }: { data: LandingPageData }) {
 
   const block = blockByKey(data.content_blocks, "faq");
 
-  // Only rows the RPC marks for schema inclusion (default true when absent).
-  const schemaFaqs = faqs.filter((f) => f.include_in_schema !== false);
+  // Only rows the RPC explicitly marks for schema inclusion.
+  const schemaFaqs = faqs.filter((f) => f.include_in_schema === true);
   const jsonLd =
     schemaFaqs.length > 0
       ? {

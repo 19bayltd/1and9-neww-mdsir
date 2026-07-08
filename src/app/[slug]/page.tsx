@@ -2,21 +2,23 @@ import { cache } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { fetchLandingPage } from "@/lib/landing";
-import { PSEOPageRenderer } from "@/components/landing/PSEOPageRenderer";
+import { getSeoPageRender } from "@/lib/seo/getSeoPageRender";
+import { getSectionImage } from "@/lib/seo/imageResolver";
+import { SectionRenderer } from "@/components/seo/SectionRenderer";
+import type { SectionBlock } from "@/types/seo";
 
 /**
- * Dynamic PSEO landing route.
+ * Dynamic SEO landing route.
  *
  * URLs like /custom-t-shirt-manufacturer-usa are resolved entirely from the
- * `get_landing_page_view` Supabase RPC. No page-specific copy is hardcoded —
- * PSEOPageRenderer maps the DB-ordered content blocks to section components.
+ * `get_seo_page_render` Supabase RPC. Section order comes from the DB
+ * (section_blocks[].position); no page copy or layout order is hardcoded.
  */
 
 type PageParams = { slug: string };
 
 // Dedupe the RPC call between generateMetadata() and the page render.
-const getPage = cache(fetchLandingPage);
+const getPage = cache(getSeoPageRender);
 
 export async function generateMetadata({
   params,
@@ -26,29 +28,36 @@ export async function generateMetadata({
   const { slug } = await params;
   const result = await getPage(slug);
 
-  if (result.status !== "ok") {
+  if (result.status !== "ok" || !result.data.page) {
     return { title: "1 & 9 Apparel" };
   }
 
-  const { page, country_assets } = result.data;
-  const ogImage = country_assets?.meta_image_url ?? page?.hero_image_url ?? undefined;
+  const { page, assigned_images } = result.data;
+  const title = page.meta_title || page.title || "1 & 9 Apparel";
+  const description = page.meta_description ?? undefined;
+  // OG image: the page's assigned hero image (real DB data, never invented).
+  const ogImage = getSectionImage("hero", assigned_images)?.image_url ?? undefined;
 
   return {
     // RPC meta_title already carries the brand suffix — bypass the layout template.
-    title: { absolute: page?.meta_title || page?.title || "1 & 9 Apparel" },
-    description: page?.meta_description ?? undefined,
-    alternates: page?.canonical_url ? { canonical: page.canonical_url } : undefined,
-    robots: page?.robots ?? undefined,
+    title: { absolute: title },
+    description,
     openGraph: {
-      title: page?.meta_title || page?.title || undefined,
-      description: page?.meta_description ?? undefined,
+      title,
+      description,
       images: ogImage ? [{ url: ogImage }] : undefined,
       type: "website",
+    },
+    twitter: {
+      card: ogImage ? "summary_large_image" : "summary",
+      title,
+      description,
+      images: ogImage ? [ogImage] : undefined,
     },
   };
 }
 
-export default async function LandingPage({
+export default async function SeoPage({
   params,
 }: {
   params: Promise<PageParams>;
@@ -62,29 +71,66 @@ export default async function LandingPage({
   }
 
   // No page → standard 404.
-  if (result.status === "not_found") {
+  if (result.status === "not_found" || !result.data.page) {
     notFound();
   }
 
-  return <PSEOPageRenderer data={result.data} />;
+  const { page, section_blocks, assigned_images, faqs } = result.data;
+
+  // DB-driven order: sort by the RPC's position (seo_content_blocks.display_order).
+  const sections = section_blocks
+    .filter((b): b is SectionBlock => Boolean(b && (b.section_key || b.block_key)))
+    .sort((a, b) => (a.position ?? 999) - (b.position ?? 999));
+
+  return (
+    <main className="bg-white text-neutral-950">
+      {sections.length > 0 ? (
+        sections.map((section) => (
+          <SectionRenderer
+            key={section.id}
+            section={section}
+            page={page}
+            assignedImages={assigned_images}
+            faqs={faqs}
+          />
+        ))
+      ) : (
+        <EmptyPage title={page.h1 || page.title} />
+      )}
+    </main>
+  );
+}
+
+/** Published page with no section blocks yet — render its heading, not a crash. */
+function EmptyPage({ title }: { title: string | null }) {
+  return (
+    <div className="mx-auto flex min-h-[60vh] max-w-3xl flex-col justify-center px-6 py-20">
+      {title ? (
+        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h1>
+      ) : null}
+      <p className="mt-4 text-base leading-relaxed text-neutral-600">
+        Content for this page is being prepared.
+      </p>
+    </div>
+  );
 }
 
 function ServiceUnavailable() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-white px-6 text-neutral-900">
+    <main className="flex min-h-screen items-center justify-center bg-white px-6 text-neutral-950">
       <div className="max-w-md text-center">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-neutral-400">
           503 · Service Unavailable
         </p>
-        <h1 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
-          Landing page data is temporarily unavailable.
+        <h1 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
+          This page is temporarily unavailable.
         </h1>
         <p className="mt-4 text-base leading-relaxed text-neutral-600">
           We couldn&apos;t load this page right now. Please try again in a few moments.
         </p>
         <Link
           href="/"
-          className="mt-8 inline-flex items-center justify-center rounded-md border border-neutral-300 px-6 py-3 text-sm font-semibold text-neutral-900 transition-colors hover:border-neutral-900"
+          className="mt-8 inline-flex items-center justify-center rounded-md border border-neutral-300 px-6 py-3 text-sm font-semibold text-neutral-950 transition-colors hover:border-neutral-950"
         >
           Return home
         </Link>

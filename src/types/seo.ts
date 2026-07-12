@@ -14,6 +14,14 @@ export interface SeoPage {
   meta_title: string | null;
   meta_description: string | null;
   layout_variant_id: number | null;
+  /**
+   * seo_pages.robots directive, e.g. "index,follow" or "noindex,follow".
+   * NOT NULL in the schema — the frontend fails loudly if it is missing
+   * rather than silently defaulting to indexable.
+   */
+  robots: string | null;
+  /** Convenience flag derived in the RPC: robots LIKE 'index%'. */
+  is_indexable: boolean | null;
 }
 
 export interface SectionBlock {

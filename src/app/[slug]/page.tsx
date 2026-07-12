@@ -22,6 +22,26 @@ type PageParams = { slug: string };
 // Dedupe the RPC call between generateMetadata() and the page render.
 const getPage = cache(getSeoPageRender);
 
+/**
+ * Map the page's robots directive (seo_pages.robots via the RPC) to Next.js
+ * metadata. The column is NOT NULL with four allowed values; if the RPC ever
+ * stops returning it, fail loudly — a page must never silently default to
+ * indexable.
+ */
+function robotsDirective(robots: string | null | undefined, slug: string) {
+  if (typeof robots !== "string" || robots.trim() === "") {
+    throw new Error(
+      `get_seo_page_render returned no robots directive for slug "${slug}" — ` +
+        "refusing to render metadata without an explicit index/noindex signal."
+    );
+  }
+  const [indexPart, followPart] = robots.split(",").map((s) => s.trim().toLowerCase());
+  return {
+    index: indexPart === "index",
+    follow: followPart !== "nofollow",
+  };
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -44,6 +64,8 @@ export async function generateMetadata({
     // RPC meta_title already carries the brand suffix — bypass the layout template.
     title: { absolute: title },
     description,
+    // Explicit index/noindex from seo_pages.robots — never an implicit default.
+    robots: robotsDirective(page.robots, slug),
     openGraph: {
       title,
       description,

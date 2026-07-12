@@ -1,5 +1,5 @@
 import type { ContentBlock } from "@/lib/landing";
-import { Paragraphs } from "./_shared";
+import { BlockCta, Paragraphs } from "./_shared";
 import { SpecIcon, type IconName } from "./icons";
 
 /**
@@ -73,6 +73,9 @@ export function ProcessSection({ block }: { block: ContentBlock }) {
           </li>
         ))}
       </ol>
+
+      {/* DB-driven CTA — renders only when the block carries the pair. */}
+      <BlockCta label={block.cta_label} url={block.cta_url} />
     </div>
   );
 }

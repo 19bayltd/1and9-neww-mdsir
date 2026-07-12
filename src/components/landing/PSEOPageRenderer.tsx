@@ -1,5 +1,5 @@
 import type { ContentBlock, LandingPageData } from "@/lib/landing";
-import { Paragraphs } from "./_shared";
+import { BlockCta, Paragraphs } from "./_shared";
 import { SectionShell } from "./SectionShell";
 import { HeroSection } from "./HeroSection";
 import { IntroSection } from "./IntroSection";
@@ -186,14 +186,7 @@ function GenericBlock({ block }: { block: ContentBlock }) {
       <div className="mt-3 max-w-3xl space-y-4 text-base leading-relaxed text-neutral-600 sm:text-lg">
         <Paragraphs text={block.body} />
       </div>
-      {block.cta_label && block.cta_url ? (
-        <a
-          href={block.cta_url}
-          className="mt-6 inline-flex items-center text-sm font-bold text-neutral-900 underline underline-offset-4 hover:text-neutral-600"
-        >
-          {block.cta_label} →
-        </a>
-      ) : null}
+      <BlockCta label={block.cta_label} url={block.cta_url} />
     </div>
   );
 }

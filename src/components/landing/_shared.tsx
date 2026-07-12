@@ -3,6 +3,30 @@
  * Internal to src/components/landing — not a page-level section itself.
  */
 
+/**
+ * DB-driven block CTA — the exact anchor GenericBlock rendered inline before.
+ * Shows only when BOTH cta_label and cta_url are present (the DB CHECK
+ * enforces the pair, but the renderer stays defensive); otherwise renders
+ * nothing, so pages with null CTA columns are pixel-identical to before.
+ */
+export function BlockCta({
+  label,
+  url,
+}: {
+  label?: string | null;
+  url?: string | null;
+}) {
+  if (!label || !url) return null;
+  return (
+    <a
+      href={url}
+      className="mt-6 inline-flex items-center text-sm font-bold text-neutral-900 underline underline-offset-4 hover:text-neutral-600"
+    >
+      {label} →
+    </a>
+  );
+}
+
 /** Split a plain-text body into paragraphs on blank lines / newlines. */
 export function Paragraphs({
   text,

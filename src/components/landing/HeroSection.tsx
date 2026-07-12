@@ -43,6 +43,11 @@ export function HeroSection({ data }: { data: LandingPageData }) {
   const description = hero?.body || page.meta_description || assets.factory_message;
   const heroImage = hero?.image_url || page.hero_image_url || assets.hero_image_url;
   const heroImageAlt = hero?.image_alt || `${title} — 1 & 9 Apparel`;
+  // Primary CTA: DB value when the hero block carries one, otherwise the
+  // original hardcoded label/anchor. The arrow is markup, not data — DB
+  // labels should not include it.
+  const primaryCtaLabel = hero?.cta_label || "Get Instant Quote";
+  const primaryCtaHref = hero?.cta_url || "#rfq";
   const moq = resolveMoq(products);
   const badges = (assets.trust_badges ?? []).filter((b) => b.label || b.image_url);
 
@@ -97,11 +102,12 @@ export function HeroSection({ data }: { data: LandingPageData }) {
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <a
-              href="#rfq"
+              href={primaryCtaHref}
               className="inline-flex items-center justify-center rounded-md bg-[#FFC400] px-6 py-3 text-sm font-bold uppercase tracking-wide text-black transition-colors hover:bg-[#e6b100]"
             >
-              Get Instant Quote →
+              {primaryCtaLabel} →
             </a>
+            {/* Secondary CTA stays hardcoded: the block schema carries one CTA pair. */}
             <a
               href="#related-products"
               className="inline-flex items-center justify-center rounded-md border border-neutral-600 px-6 py-3 text-sm font-bold uppercase tracking-wide text-white transition-colors hover:border-white"
@@ -152,6 +158,9 @@ export function HeroSection({ data }: { data: LandingPageData }) {
 
         {/* ------------------------------------------------------------ */}
         {/* Right — instant quote card (visual shortcut to #rfq)          */}
+        {/* Intentionally NOT wired to the hero block's cta_url: this card */}
+        {/* is an anchor into the on-page RFQ form by design (the caption  */}
+        {/* below the button promises "the full production request below").*/}
         {/* ------------------------------------------------------------ */}
         <aside className="lg:pt-2">
           <div className="rounded-2xl border border-neutral-800 bg-[#111111] p-5 shadow-2xl sm:p-6">

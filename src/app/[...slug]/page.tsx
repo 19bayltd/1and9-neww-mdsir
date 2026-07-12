@@ -18,7 +18,32 @@ import { PSEOPageRenderer } from "@/components/landing/PSEOPageRenderer";
  * → #rfq) when the DB fields are null.
  */
 
-type PageParams = { slug: string };
+// Catch-all: seo_pages.slug may contain "/" (e.g. guides/how-…), which a
+// single-segment [slug] route can never match. Segments are joined back into
+// the exact DB slug: no leading or trailing slash.
+type PageParams = { slug: string[] };
+
+// Deeper than any real slug — reject junk paths without spending an RPC call.
+const MAX_SLUG_SEGMENTS = 4;
+
+/**
+ * Join route segments into the DB slug, or null for paths that can never
+ * match a page. Next.js already 308-redirects trailing-slash URLs, but the
+ * empty-final-segment strip keeps this correct even if that config changes.
+ * decodeURIComponent is wrapped so malformed escapes (e.g. /%zz) 404 instead
+ * of throwing a 500.
+ */
+function slugFromParams(segments: string[]): string | null {
+  if (segments.length > 0 && segments[segments.length - 1] === "") {
+    segments = segments.slice(0, -1);
+  }
+  if (segments.length === 0 || segments.length > MAX_SLUG_SEGMENTS) return null;
+  try {
+    return segments.map(decodeURIComponent).join("/");
+  } catch {
+    return null;
+  }
+}
 
 // Dedupe the RPC call between generateMetadata() and the page render.
 const getPage = cache(getSeoPageRender);
@@ -49,7 +74,11 @@ export async function generateMetadata({
   params: Promise<PageParams>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const result = await getPage(slug);
+  const slugPath = slugFromParams(slug);
+  if (!slugPath) {
+    return { title: "1 & 9 Apparel" };
+  }
+  const result = await getPage(slugPath);
 
   if (result.status !== "ok" || !result.data.page) {
     return { title: "1 & 9 Apparel" };
@@ -66,7 +95,7 @@ export async function generateMetadata({
     title: { absolute: title },
     description,
     // Explicit index/noindex from seo_pages.robots — never an implicit default.
-    robots: robotsDirective(page.robots, slug),
+    robots: robotsDirective(page.robots, slugPath),
     openGraph: {
       title,
       description,
@@ -88,7 +117,12 @@ export default async function LandingPage({
   params: Promise<PageParams>;
 }) {
   const { slug } = await params;
-  const result = await getPage(slug);
+  // Junk-depth or malformed paths 404 without an RPC call.
+  const slugPath = slugFromParams(slug);
+  if (!slugPath) {
+    notFound();
+  }
+  const result = await getPage(slugPath);
 
   // RPC error → throw so the route answers with a real 5xx instead of a
   // cacheable 200 "soft error". error.tsx renders the same 503-style UI;

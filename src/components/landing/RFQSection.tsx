@@ -52,6 +52,9 @@ export function RFQSection({
   const intro =
     body ||
     "Send your requirements and our merchandising team replies with pricing and lead time within one business day.";
+  // Deliberate: only the block's cta_label is consumed here. The block's
+  // cta_url is intentionally ignored — this CTA is the form's submit button,
+  // not a link, so there is no href for it to feed.
   const cta = ctaLabel || "Get Instant Quote";
 
   const [values, setValues] = useState({

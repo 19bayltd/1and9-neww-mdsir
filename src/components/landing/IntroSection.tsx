@@ -1,5 +1,5 @@
 import type { ContentBlock, GalleryImage, LandingPageData } from "@/lib/landing";
-import { Paragraphs } from "./_shared";
+import { BlockCta, Paragraphs } from "./_shared";
 import { SpecIcon, type IconName } from "./icons";
 
 /**
@@ -72,6 +72,9 @@ export function IntroSection({
             </div>
           ))}
         </div>
+
+        {/* DB-driven CTA — renders only when the intro block carries the pair. */}
+        <BlockCta label={block.cta_label} url={block.cta_url} />
       </div>
 
       {/* Image grid — DB images only; skipped when none exist */}

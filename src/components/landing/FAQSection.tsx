@@ -9,6 +9,10 @@ import { blockByKey, type LandingPageData, type Faq } from "@/lib/landing";
  * RPC's `include_in_schema` flag (rows flagged false render on the page but
  * stay out of the structured data). Native <details>/<summary> keeps the
  * accordion keyboard-accessible without JavaScript.
+ *
+ * Deliberate: this section has no CTA slot by design — the faq block's
+ * cta_label/cta_url are not rendered here (the section closes with the
+ * fixed "ask it in your quote request" link to #rfq instead).
  */
 export function FAQSection({ data }: { data: LandingPageData }) {
   const faqs: Faq[] = (data.faqs ?? []).filter((f) => f.question && f.answer);

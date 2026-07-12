@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ContentBlock, InternalLink, InternalLinks } from "@/lib/landing";
-import { Paragraphs } from "./_shared";
+import { BlockCta, Paragraphs } from "./_shared";
 import { SpecIcon, type IconName } from "./icons";
 
 /**
@@ -86,6 +86,9 @@ export function BuyerSolutionsSection({
           );
         })}
       </div>
+
+      {/* DB-driven CTA — renders only when the block carries the pair. */}
+      <BlockCta label={block.cta_label} url={block.cta_url} />
     </div>
   );
 }

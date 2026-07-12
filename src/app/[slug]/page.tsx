@@ -12,8 +12,10 @@ import { PSEOPageRenderer } from "@/components/landing/PSEOPageRenderer";
  * Data comes entirely from the `get_seo_page_render` Supabase RPC; the
  * original landing visual system (src/components/landing) renders it via the
  * mapRpcToLandingProps adapter. Section order comes from the DB
- * (section_blocks[].position → content_blocks[].sort_order); no page copy or
- * layout order is hardcoded.
+ * (section_blocks[].position → content_blocks[].sort_order). Copy and CTAs
+ * are DB-first: components render the block's values when present and fall
+ * back to fixed presentation defaults (e.g. the hero's "Get Instant Quote"
+ * → #rfq) when the DB fields are null.
  */
 
 type PageParams = { slug: string };

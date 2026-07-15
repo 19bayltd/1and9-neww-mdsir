@@ -45,13 +45,18 @@ export interface SectionBlock {
 }
 
 export interface AssignedImage {
+  /**
+   * seo_page_images.id for manual/override assignments; deterministic
+   * resolver picks carry a synthetic NEGATIVE id (-image_id). Only used for
+   * de-duplication — never as a database key.
+   */
   id: number;
   image_id: number | null;
   image_key: string | null;
   image_url: string | null;
   alt: string | null;
   image_type: string | null;
-  /** Assignment slot on the page (seo_page_images.section_name). */
+  /** Assignment slot on the page (resolved section key). */
   section_name: string | null;
   /** Section this image is intended for (image_library.section_target). */
   section_target: string | null;
@@ -59,6 +64,15 @@ export interface AssignedImage {
   is_primary: boolean | null;
   width: number | null;
   height: number | null;
+  /**
+   * Deterministic image engine audit fields (additive as of the
+   * 20260715 migrations): how this image was chosen for the slot, e.g.
+   * "manual_page_mapping" | "exact_city" | "exact_state" | "exact_country" |
+   * "product_section" | "global_fallback" | "manual_page_override".
+   */
+  selection_source?: string | null;
+  selection_score?: number | null;
+  selection_reason?: string | null;
 }
 
 export interface FAQItem {
